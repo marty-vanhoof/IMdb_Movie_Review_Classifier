@@ -1,4 +1,4 @@
-# IMdb Movie Review Classifier
+# IMDb Movie Review Classifier
 
 This project requires Python 3.x and the following Python libraries:
 
