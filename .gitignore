@@ -1,3 +1,4 @@
 # files to ignore in local repository
 
+__pycache__/
 .ipynb_checkpoints
