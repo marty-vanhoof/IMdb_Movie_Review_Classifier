@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 from keras.datasets import imdb
 from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
+from keras.layers import Dense, Dropout, Flatten
 from keras.layers.embeddings import Embedding
 from keras.preprocessing import sequence
 from keras.wrappers.scikit_learn import KerasClassifier
@@ -19,33 +18,32 @@ def get_imdb_data(top_words=5000, max_review_length=500):
     X_train = sequence.pad_sequences(X_train, maxlen=max_review_length)
     X_test = sequence.pad_sequences(X_test, maxlen=max_review_length)
 
-    return X_train, y_train, X_test, y_test
-
-def print_info():
-
     print('number of training examples: ', len(X_train))
     print('number of testing examples: ', len(X_test))
-
     print('train/test set dimensions: ', X_train.shape, X_test.shape, '\n')
-    print('first sentence in training set, encoded and padded:\n\n ', X_train[0], '\n')
 
-def build_model(optimizer='rmsprop', input_dim=5000, output_dim=32, input_length=500):
+    return X_train, y_train, X_test, y_test
+
+#get_imdb_data()
+
+def build_model(optimizer='rmsprop', input_dim=5000, output_dim=32, max_review_length=500):
     
     model = Sequential()
-    
-    # input layer
+
+    # embedding layer
     model.add(Embedding(input_dim, output_dim, input_length=max_review_length))
+    model.add(Flatten())
     
     # first hidden layer 
-    model.add(Dense(512, activation='relu'))
+    model.add(Dense(250, activation='relu'))
     model.add(Dropout(0.2))
     
     # second hidden layer
-    model.add(Dense(512, activation='relu'))
+    model.add(Dense(250, activation='relu'))
     model.add(Dropout(0.2))
     
     # output layer
-    model.add(Dense(1, activation='logistic'))
+    model.add(Dense(1, activation='sigmoid'))
     
     # compile the model
     #optimizer = RMSprop(lr=learn_rate, rho=grad_decay)
@@ -56,6 +54,9 @@ def build_model(optimizer='rmsprop', input_dim=5000, output_dim=32, input_length
     return model
 
 def grid_search(model, param_grid):
+
+    # get training data
+    X_train, y_train = get_imdb_data()[0], get_imdb_data()[1]
 
     # set up and perform the grid search
     grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=-1)
@@ -76,27 +77,23 @@ def grid_search(model, param_grid):
     
     return grid_result, final_results
 
-
 def main():
 
     np.random.seed(13)
 
-    # get training data
-    X_train, y_train = get_imdb_data[0], get_imdb_data[1]
-
     # wrapper for sklearn API
-    model = KerasClassifier(build_fn=build_model, batch_size=500, verbose=1)
+    model = KerasClassifier(build_fn=build_model, verbose=1)
 
     # hyper-parameters for grid search
-    batch_size = [50, 100, 500, 1000]
-    epochs = [20]
-    optimizer = ['rmsprop', 'adam', 'sgd', 'adagrad', 'adadelta', 'adamax', 'nadam']
+    batch_size = [100, 200, 500]
+    epochs = [2, 5, 10]
+    optimizer = ['rmsprop', 'adam'] #'sgd', 'adagrad', 'adadelta', 'adamax', 'nadam']
     learn_rate = [0.0001, 0.001, 0.01, 0.1, 0.3]
     # grad_decay is called rho in the documentation (it's not learn rate decay)
     grad_decay = [0.1, 0.5, 0.9]
 
     # change param_grid to grid search different parameters
-    param_grid = dict(epochs=epochs, learn_rate=learn_rate, grad_decay=grad_decay) 
+    param_grid = dict(epochs=epochs, batch_size=batch_size, optimizer=optimizer) 
 
     # get the results from grid_search()
     grid_result, final_results = grid_search(model, param_grid)
@@ -105,12 +102,12 @@ def main():
     best_model = grid_result.best_estimator_.model
 
     # save classifier to a .hdf5 file
-    filename = 'mnist_rms-lr-rho_best.hdf5'
+    filename = 'imdb_batch_epoch_best.hdf5'
     best_model.save_weights(filename)
 
     # write final_results dict to a csv file
     df = pd.DataFrame.from_dict(final_results)
-    df.to_csv('grid_rms_results.csv', index=False)
+    df.to_csv('grid_batch_epoch_results.csv', index=False)
 
     print(df)
 
