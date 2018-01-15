@@ -1,0 +1,8 @@
+mean_fit_time,mean_test_score,mean_train_score,params
+87.64525596300761,0.8672000011372566,0.9819400520310214,"{'batch_size': 200, 'epochs': 2, 'optimizer': 'adam'}"
+80.80807836850484,0.8632800012469292,0.9696199881351403,"{'batch_size': 200, 'epochs': 2, 'optimizer': 'rmsprop'}"
+72.44566734631856,0.5081599978470802,0.5135401163947472,"{'batch_size': 200, 'epochs': 2, 'optimizer': 'sgd'}"
+79.33401052157085,0.8775599987721443,0.970920038017394,"{'batch_size': 200, 'epochs': 2, 'optimizer': 'adagrad'}"
+96.8992269039154,0.5531199975657463,0.581459245660053,"{'batch_size': 200, 'epochs': 2, 'optimizer': 'adadelta'}"
+87.50200271606445,0.8420800019669533,0.9229193098133278,"{'batch_size': 200, 'epochs': 2, 'optimizer': 'adamax'}"
+76.71679941813152,0.864240001308918,0.9896200394121949,"{'batch_size': 200, 'epochs': 2, 'optimizer': 'nadam'}"
