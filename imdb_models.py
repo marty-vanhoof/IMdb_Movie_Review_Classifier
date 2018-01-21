@@ -26,7 +26,8 @@ def get_imdb_data(top_words=5000, max_review_length=500):
 
 #get_imdb_data()
 
-def build_model(optimizer='rmsprop', input_dim=5000, output_dim=32, max_review_length=500):
+def build_model(optimizer='adagrad', learn_rate=0.01, learn_rate_decay=0.0,
+                input_dim=5000, output_dim=32, max_review_length=500):
     
     model = Sequential()
 
@@ -46,7 +47,7 @@ def build_model(optimizer='rmsprop', input_dim=5000, output_dim=32, max_review_l
     model.add(Dense(1, activation='sigmoid'))
     
     # compile the model
-    #optimizer = RMSprop(lr=learn_rate, rho=grad_decay)
+    optimizer = Adagrad(lr=learn_rate, decay=learn_rate_decay)
     model.compile(loss='binary_crossentropy',
                   optimizer=optimizer,
                   metrics=['accuracy'])
@@ -85,12 +86,11 @@ def main():
     model = KerasClassifier(build_fn=build_model, verbose=1)
 
     # hyper-parameters for grid search
-    batch_size = [100, 200, 500]
-    epochs = [2, 5, 10]
-    optimizer = ['rmsprop', 'adam'] #'sgd', 'adagrad', 'adadelta', 'adamax', 'nadam']
-    learn_rate = [0.0001, 0.001, 0.01, 0.1, 0.3]
-    # grad_decay is called rho in the documentation (it's not learn rate decay)
-    grad_decay = [0.1, 0.5, 0.9]
+    batch_size = [200]
+    epochs = [2]
+    optimizer = ['adagrad'] #, 'adam', 'rmsprop', 'sgd', 'adadelta', 'adamax', 'nadam']
+    learn_rate = [0.001, 0.01, 0.1, 0.3]
+    learn_rate_decay = [0.0, 0.1, 0.01, 0.001]
 
     # change param_grid to grid search different parameters
     param_grid = dict(epochs=epochs, batch_size=batch_size, optimizer=optimizer) 
@@ -102,12 +102,12 @@ def main():
     best_model = grid_result.best_estimator_.model
 
     # save classifier to a .hdf5 file
-    filename = 'imdb_batch_epoch_best.hdf5'
+    filename = 'imdb_results/imdb_optimizer_best.hdf5'
     best_model.save_weights(filename)
 
     # write final_results dict to a csv file
     df = pd.DataFrame.from_dict(final_results)
-    df.to_csv('grid_batch_epoch_results.csv', index=False)
+    df.to_csv('imdb_results/grid_optimizer_results.csv', index=False)
 
     print(df)
 
