@@ -6,8 +6,9 @@ from keras.layers import Dense, Dropout, Flatten
 from keras.layers.embeddings import Embedding
 from keras.preprocessing import sequence
 from keras.wrappers.scikit_learn import KerasClassifier
-from keras.optimizers import RMSprop
+from keras.optimizers import Adagrad
 from sklearn.model_selection import GridSearchCV 
+from keras.constraints import max_norm
 
 def get_imdb_data(top_words=5000, max_review_length=500):
 
@@ -26,8 +27,9 @@ def get_imdb_data(top_words=5000, max_review_length=500):
 
 #get_imdb_data()
 
-def build_model(optimizer='adagrad', learn_rate=0.01, learn_rate_decay=0.0,
-                input_dim=5000, output_dim=32, max_review_length=500):
+def build_model(optimizer='adagrad', learn_rate=0.01, learn_rate_decay=0.01, activation='relu',
+                dropout_rate=0.2, weight_constraint=3, input_dim=5000, output_dim=32,
+                max_review_length=500):
     
     model = Sequential()
 
@@ -36,12 +38,12 @@ def build_model(optimizer='adagrad', learn_rate=0.01, learn_rate_decay=0.0,
     model.add(Flatten())
     
     # first hidden layer 
-    model.add(Dense(250, activation='relu'))
-    model.add(Dropout(0.2))
+    model.add(Dense(250, activation=activation, kernel_constraint=max_norm(weight_constraint)))
+    model.add(Dropout(dropout_rate))
     
     # second hidden layer
-    model.add(Dense(250, activation='relu'))
-    model.add(Dropout(0.2))
+    model.add(Dense(250, activation=activation, kernel_constraint=max_norm(weight_constraint)))
+    model.add(Dropout(dropout_rate))
     
     # output layer
     model.add(Dense(1, activation='sigmoid'))
@@ -83,17 +85,20 @@ def main():
     np.random.seed(13)
 
     # wrapper for sklearn API
-    model = KerasClassifier(build_fn=build_model, verbose=1)
+    model = KerasClassifier(build_fn=build_model, batch_size=200, epochs=2, verbose=1)
 
     # hyper-parameters for grid search
-    batch_size = [200]
-    epochs = [2]
-    optimizer = ['adagrad'] #, 'adam', 'rmsprop', 'sgd', 'adadelta', 'adamax', 'nadam']
+    batch_size = [100, 200, 500]
+    epochs = [2, 5, 10]
+    optimizer = ['adam', 'rmsprop', 'sgd', 'adagrad', 'adadelta', 'adamax', 'nadam']
     learn_rate = [0.001, 0.01, 0.1, 0.3]
     learn_rate_decay = [0.0, 0.1, 0.01, 0.001]
+    activation = ['softmax', 'softplus', 'softsign', 'relu', 'tanh', 'sigmoid', 'hard_sigmoid', 'linear']
+    dropout_rate = [0.1, 0.2, 0.3, 0.4]
+    weight_constraint = [1,2,3,4] 
 
-    # change param_grid to grid search different parameters
-    param_grid = dict(epochs=epochs, batch_size=batch_size, optimizer=optimizer) 
+    # change param_grid to grid search different hyper-parameters
+    param_grid = dict(dropout_rate=dropout_rate, weight_constraint=weight_constraint) 
 
     # get the results from grid_search()
     grid_result, final_results = grid_search(model, param_grid)
@@ -102,12 +107,12 @@ def main():
     best_model = grid_result.best_estimator_.model
 
     # save classifier to a .hdf5 file
-    filename = 'imdb_results/imdb_optimizer_best.hdf5'
+    filename = 'imdb_results/imdb_dropout_best.hdf5'
     best_model.save_weights(filename)
 
     # write final_results dict to a csv file
     df = pd.DataFrame.from_dict(final_results)
-    df.to_csv('imdb_results/grid_optimizer_results.csv', index=False)
+    df.to_csv('imdb_results/grid_dropout_results.csv', index=False)
 
     print(df)
 
